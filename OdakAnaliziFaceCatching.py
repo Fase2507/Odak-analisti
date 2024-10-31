@@ -78,6 +78,7 @@ while True:
     faces = faceCascade.detectMultiScale(img, 1.2, 4)
     gray = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY)
     Faces = face_cascade.detectMultiScale(gray, 1.1, 4)
+    imgCropped = img[50:350, 80:180]
 
     for (x, y, w, h) in Faces:
         cv2.rectangle(img, (x, y), (x + w, y + h), (255, 0, 0), 2)
@@ -88,7 +89,7 @@ while True:
 
     if cv2.waitKey(1) & 0xFF ==ord('q'):
         break
-    imgStack = stackImages(0.8, ([img, imgResult, mask]))
+    imgStack = stackImages(0.8, ([img, imgResult, mask,imgCropped]))
 
     # cv2.imshow("original", img)
     # cv2.imshow("result", imgResult)
@@ -96,4 +97,13 @@ while True:
     cv2.imshow("ALL", imgStack)
 
 cap.release()
+print(h_min,h_max,s_min,v_min,v_max)
+#0 61 0 75 93
+#0 179 0 94 145!! onemli eşik degeri.
+#0 179 0 75 145!! Negatif eşik odak yok!!
+
 cv2.waitKey(0)
+
+
+
+
