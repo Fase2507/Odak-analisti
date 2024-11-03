@@ -2,6 +2,18 @@
 import numpy as np
 import time
 import cv2
+import ctypes
+import tkinter as tk
+from tkinter import messagebox
+
+def show_alert(message):
+    # Create a new tkinter window
+    root = tk.Tk()
+    root.withdraw()  # Hide the root window
+    messagebox.showinfo("Alert", message)  # Show the alert
+    root.destroy()  # Destroy the window after closing
+
+
 
 # Stack function
 def stackImages(scale, imgArray):
@@ -53,9 +65,14 @@ cv2.createTrackbar("Val max", "Trackbars", 255, 255, empty)
 
 focus_loss_start_time = None
 total_elapsed_time = 0  # Toplam süre
+alert_displayed = False  # Track if the alert has already been shown
 
 while True:
     success, img = cap.read()
+    if not success:
+        print("Failed to capture image from camera.")
+        break
+
     imgHSV = cv2.cvtColor(img, cv2.COLOR_BGR2HSV)
 
     # Trackbar values
@@ -73,31 +90,57 @@ while True:
 
     gray = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY)
     Faces = face_cascade.detectMultiScale(gray, 1.2, 4)
-    for (x, y, w, h) in Faces:
-        imgEye = img[y:y + h, x:x + w]
-        imgEyeHSV = cv2.inRange(imgEye, lower, upper)
-        cv2.rectangle(img, (x, y), (x + w, y + h), (255, 0, 0), 1)
-
-    white_area = cv2.countNonZero(imgEyeHSV)
-    total_area = imgEyeHSV.shape[0] * imgEyeHSV.shape[1]
-    white_ratio = white_area / total_area
-
-    # Eğer beyaz oranı %95'ten fazlaysa süreyi başlat
-    if white_ratio > 0.95:
-        if focus_loss_start_time is None:
-            focus_loss_start_time = time.time()
-        else:
+    if len(Faces) > 0:
+        # Eyes detected; reset focus loss tracking
+        if focus_loss_start_time is not None:
             elapsed_time = time.time() - focus_loss_start_time
-            if elapsed_time >= 5:  # 5 saniye geçtiğinde toplam süreyi güncelle
-                total_elapsed_time += elapsed_time
-                focus_loss_start_time = time.time()  # Başlangıç zamanını güncelle
-    else:
-        focus_loss_start_time = None  # Beyaz alan oranı %95'in altına düştüğünde başlangıç zamanını sıfırla
+            focus_loss_start_time = None  # Reset the timer
+            # print(f"Focus loss duration added: {elapsed_time:.2f} seconds")
+        # Process detected faces
+        for (x, y, w, h) in Faces:
+            imgEye = img[y:y + h, x:x + w]
+            imgEyeHSV = cv2.inRange(imgEye, lower, upper)
+            cv2.rectangle(img, (x, y), (x + w, y + h), (255, 0, 0), 1)
 
-    cv2.putText(img, f"Odak kaybi: {int(total_elapsed_time)} sn", (10, 50),
+            white_area = cv2.countNonZero(imgEyeHSV)
+            total_area = imgEyeHSV.shape[0] * imgEyeHSV.shape[1]
+            white_ratio = white_area / total_area if total_area > 0 else 0
+
+    else:
+        # No faces detected; start focus loss timing
+
+
+        # No faces detected; start focus loss timing
+        if focus_loss_start_time is None:
+            focus_loss_start_time = time.time()  # Start timing when no faces detected
+
+        # Accumulate focus loss time
+        elapsed_time = time.time() - focus_loss_start_time
+        total_elapsed_time += elapsed_time  # Add elapsed time to total
+        focus_loss_start_time = time.time()  # Reset the start time for the next duration
+
+        # Check if total elapsed time exceeds 15 seconds
+        if total_elapsed_time >= 5:
+            show_alert("ALERT: Focus lost for 5 seconds!")
+            alert_displayed=True
+        # Reset the alert if focus is regained
+    if len(Faces) > 0:
+        total_elapsed_time = 0  # Reset total elapsed time when faces are detected
+        if total_elapsed_time >= 5 and not alert_displayed:
+            cv2.putText(img, "ALERT: Focus lost for 5 seconds!", (10, 100),
+                        cv2.FONT_HERSHEY_SIMPLEX, 1, (0, 0, 255), 3)
+            alert_displayed = True  # Mark alert as displayed
+
+        #     # Reset the alert if focus is regained
+        # if len(Faces) > 0:
+        #     alert_displayed = False
+    # Display the accumulated focus loss time
+
+    cv2.putText(img, f"Odak kaybi: {int(total_elapsed_time)} sn", (40,250),
                 cv2.FONT_HERSHEY_SIMPLEX, 1, (0, 0, 255), 2)
 
-    imgStack = stackImages(0.8, [[img, imgResult, mask], [imgEye, imgEyeHSV, img]])
+
+    imgStack = stackImages(0.8, [[img, imgResult, mask], [imgEye if 'imgEye' in locals() else np.zeros_like(img), imgEyeHSV if 'imgEyeHSV' in locals() else np.zeros_like(img), img]])
     cv2.imshow("ALL", imgStack)
 
     if cv2.waitKey(1) & 0xFF == ord('q'):
