@@ -128,7 +128,7 @@ while True:
         total_elapsed_time += elapsed_time
         focus_loss_start_time =time.time()
         if int(total_elapsed_time)%30 == 0:
-                show_alert("Attention!", "This is a test alert for your operating system.")
+                show_alert("DIKKAT!", "Odaginiz dagildi.")
 
                 alert_displayed=True
 
