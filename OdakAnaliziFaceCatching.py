@@ -66,7 +66,7 @@ cv2.createTrackbar("Val max", "Trackbars", 255, 255, empty)
 focus_loss_start_time = None
 total_elapsed_time = 0  # Toplam süre
 alert_displayed = False  # Track if the alert has already been shown
-
+new_loss=0
 while True:
     success, img = cap.read()
     if not success:
@@ -113,28 +113,16 @@ while True:
         # No faces detected; start focus loss timing
         if focus_loss_start_time is None:
             focus_loss_start_time = time.time()  # Start timing when no faces detected
-
         # Accumulate focus loss time
         elapsed_time = time.time() - focus_loss_start_time
         total_elapsed_time += elapsed_time  # Add elapsed time to total
-        focus_loss_start_time = time.time()  # Reset the start time for the next duration
+        focus_loss_start_time =time.time()  # Reset the start time for the next duration
 
         # Check if total elapsed time exceeds 15 seconds
-        if total_elapsed_time >= 5:
-            show_alert("ALERT: Focus lost for 5 seconds!")
-            alert_displayed=True
-        # Reset the alert if focus is regained
-    if len(Faces) > 0:
-        total_elapsed_time = 0  # Reset total elapsed time when faces are detected
-        if total_elapsed_time >= 5 and not alert_displayed:
-            cv2.putText(img, "ALERT: Focus lost for 5 seconds!", (10, 100),
-                        cv2.FONT_HERSHEY_SIMPLEX, 1, (0, 0, 255), 3)
-            alert_displayed = True  # Mark alert as displayed
+        if int(total_elapsed_time)%8 == 0 and int(total_elapsed_time !=0):
+                show_alert("ALERT: Focus lost for 5 seconds!")
+                alert_displayed=True
 
-        #     # Reset the alert if focus is regained
-        # if len(Faces) > 0:
-        #     alert_displayed = False
-    # Display the accumulated focus loss time
 
     cv2.putText(img, f"Odak kaybi: {int(total_elapsed_time)} sn", (40,250),
                 cv2.FONT_HERSHEY_SIMPLEX, 1, (0, 0, 255), 2)
@@ -145,6 +133,5 @@ while True:
 
     if cv2.waitKey(1) & 0xFF == ord('q'):
         break
-
 cap.release()
 cv2.destroyAllWindows()
