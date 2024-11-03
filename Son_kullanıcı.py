@@ -127,8 +127,8 @@ while True:
         elapsed_time = time.time() - focus_loss_start_time
         total_elapsed_time += elapsed_time
         focus_loss_start_time =time.time()
-        if int(total_elapsed_time)%30 == 0:
-                show_alert("DIKKAT!", "Odaginiz dagildi.")
+        if int(total_elapsed_time)%60 == 0:
+                show_alert("DIKKAT!", "Bir dakikadır odaklanmamış haldesiniz,Lütfen eğitiminize odaklanın...")
 
                 alert_displayed=True
 
